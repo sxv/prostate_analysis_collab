@@ -667,7 +667,7 @@ RunSEQ <- function(x=NULL, dds = NULL, initial_filter="rowSum", Col_Data=NULL, o
       print("Not implemented.")
     }
     else {
-      print("Outlier removed")
+      print("Additional outlier not performed.")
     }
 
     print("dim after outlier rep")
