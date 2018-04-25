@@ -75,18 +75,18 @@ remove_outliers <- function(x, na.rm = TRUE, ...) {
   print(sum(na_count>=max(na_count)))
   print("max number of outlier per genes:")
   print(max(na_count))
-  print("the mean / median of outlier per genes:") 
+  print("the mean / median of outlier per genes:")
   print(paste0(mean(na_count), " / ", median(na_count)))
   print("The number of genes")
   print("The number of value cells affected by the outlier replacement")
   c_c = is.na(y)
-  tb = table(c_c) 
+  tb = table(c_c)
   a = tb["FALSE"]
   b = tb["TRUE"]
   value_affected_by_outlier = (b / (a+b)) *100
   value_affected_by_outlier = format(round(value_affected_by_outlier, 2), nsmall = 2)
   print(paste0(value_affected_by_outlier, " %"))
-  y <- ifelse(is.na(y), rowMeans(x), y) 
+  y <- ifelse(is.na(y), rowMeans(x), y)
   y
 }
 #Geometric mean
@@ -118,21 +118,21 @@ get_recursive_cluster_number <- function(x=NA) {
   s_index = match(select_to_cluster,x$k)
   s_index = s_index[1]
   if (s_index <length_x & s_index>1) {
-    previous_mean_itm = x$mean_vle[s_index+1] 
+    previous_mean_itm = x$mean_vle[s_index+1]
     previous_sem_itm = x$sem_vle[s_index+1]
-    current_mean_itm = x$mean_vle[s_index] 
+    current_mean_itm = x$mean_vle[s_index]
     current_sem_itm = x$sem_vle[s_index]
-    next_mean_itm = x$mean_vle[s_index-1] 
+    next_mean_itm = x$mean_vle[s_index-1]
     next_sem_itm = x$sem_vle[s_index-1]
     print(select_to_cluster)
     if ((previous_mean_itm-previous_sem_itm)<=(current_mean_itm+current_sem_itm)) {
-      select_to_cluster = x$k[s_index+1] 
+      select_to_cluster = x$k[s_index+1]
       print("Changed back")
     }
     if ((current_mean_itm-current_sem_itm) < (next_mean_itm+next_sem_itm)) {
       if ((next_mean_itm+next_sem_itm)<(previous_mean_itm-previous_sem_itm)) {
         select_to_cluster = x$k[s_index-1]
-        print("Changed forward") 
+        print("Changed forward")
       }
     }
   }
@@ -164,12 +164,12 @@ get_cluster_number <- function(icl=NA, prefix_id, normalization_id, data_type_id
       }
     }
   }
-  
+
   table_icl = data.frame(k=unlist(results_icl_k), mean_vle = unlist(results_icl_mean), sem_vle = unlist(results_icl_sem))
   table_icl = table_icl[order(table_icl$mean_vle),]
   print(paste0(prefix_id, "_", normalization_id, "_", data_type_id, ":"))
   print(table_icl)
-  
+
   recommend_cluster = get_recursive_cluster_number(table_icl)#table_icl$k[1]
   print(paste("Cluster recommended:", recommend_cluster))
   png(paste0(prefix_id, "_", normalization_id, "_", data_type_id,"_cluster_sample.png"))
@@ -191,13 +191,13 @@ get_cluster_number_based_on_Consensus <- function(icl=NA, prefix_id, normalizati
   x_result <- tabl %>% group_by(k) %>%
     summarise(clusterConsensus = mean(clusterConsensus)) %>% arrange(desc(clusterConsensus))# %>% filter(clusterConsensus<=ic95$conf.int[2] & clusterConsensus>=ic95$conf.int[1])
   x_result = na.omit(x_result)
-  
+
   print(paste0(prefix_id, "_", normalization_id, "_", data_type_id, ":"))
   print(x_result)
   k_sample = 1
   if (nrow(x_result)>0) {
     counter = 1
-    
+
     previous_value = 0
     for (x_k in signif(x_result$clusterConsensus,3)) {
       if (x_k>=previous_value) {
@@ -212,11 +212,17 @@ get_cluster_number_based_on_Consensus <- function(icl=NA, prefix_id, normalizati
   return(k_sample)
 }
 #Get the tight cluster
-getTightCluster <- function(x=NA, stop_cut_off=0.5, target_max=20, standardize.gene=F) {
+getTightCluster <- function(x=NA, stop_cut_off=0.5, target_max=20, standardize.gene=F, Start_with_max=T) {
   incremental_increase = 1
+
   target_k = 2
-  k_min = target_k +5 
+  k_min = target_k +5
   tclust2 = NA
+  if (Start_with_max){
+    
+    tclust2<-tight.clust(x, target=target_max, k.min=target_max+5, random.seed=12345, standardize.gene=standardize.gene)
+    print(table(tclust2$cluster))
+  } else{   
   repeat{
     tclust2<-tight.clust(x, target=target_k, k.min=k_min, random.seed=12345, standardize.gene=standardize.gene)
     c_r = length(tclust2$cluster[tclust2$cluster==-1]) / length(tclust2$cluster)
@@ -225,47 +231,62 @@ getTightCluster <- function(x=NA, stop_cut_off=0.5, target_max=20, standardize.g
     if(c_r<=stop_cut_off | target_k >=target_max){
       print(table(tclust2$cluster))
       break
-    } 
+    }
+  }
   }
   return(tclust2)
 }
 #Get the heatmap from tight cluster
-generate_pheatmap_from_tight_cluster <- function (x, standardize.gene = F, order.sample = T, plot.noise=F) {
+#Order sample either by hclust or the columne name in col_anno: SampleType
+generate_pheatmap_from_tight_cluster <- function (x, standardize.gene = T, col_anno=NULL, order.sample = "hclust", plot.noise=F) {
   data <- x$data
   cluster <- x$cluster
   size <- x$size
   data_t = data[!duplicated(rownames(data),fromLast = T),]
   cluster = cluster[!duplicated(rownames(data),fromLast = T)]
   data = data_t
-  
-  if (standardize.gene) 
+
+  if (standardize.gene)
     data <- t(scale(t(data)))
   l <- 1:max(cluster)
-  if (plot.noise) 
+  if (plot.noise)
     l <- c(l, -1)
   order.genes <- unlist(lapply(l, function(i) which(cluster == i)))
   data.plot <- data[order.genes, ]
   cluster_ordered <- cluster[order.genes]
-  hclust_col = NA
-  
-  if (order.sample) {
-    hclust_col = hclust(dist(t(data.plot)))
+  SampleType = NA
+  if (order.sample=="hclust") {
+    order.sample = T
+  } else {
+    l_x <- levels(col_anno[,order.sample])
+    sample_list <- col_anno[,order.sample]
+    order.samples <- unlist(lapply(l_x, function(i) which(sample_list == i)))
+    #print(length(order.samples))
+    #print(dim(data.plot))
+    SampleType = order.sample
+    data.plot <- data.plot[, order.samples]
+    #print(dim(data.plot))
+    #print("Done")s
+    order.sample = F
   }
-  cuts <- cumsum(size)
-  if (!plot.noise) 
-    cuts <- cuts[-length(size)]
-  
-  col = colorRampPalette(c("green", "black", "red"))(64)
+
+  col = colorRampPalette(c("green", "black", "red"))(21)
   info_row = data.frame('gene cluster' = as.factor(cluster_ordered[cluster_ordered %in% l]))
+  #print(dim(info_row))
   rownames(info_row) = rownames(data.plot)
   ann_colors = list('gene cluster' = colorRampPalette(c("red", "black"))(max(cluster)))
   names(ann_colors$'gene cluster') = levels(info_row$gene.cluster)
-  pt <- pheatmap(data.plot, annotation_row = info_row, color = col, clustering_distance_cols="correlation", 
-                 annotation_colors = ann_colors, 
-                 cluster_cols=order.sample, 
+  if (!is.null(col_anno)) {
+    ann_colors$SampleType = rainbow(length(unique(col_anno[,SampleType])))
+    names(ann_colors$SampleType) = unique(col_anno$SampleType)
+  }
+  
+  pt <- pheatmap(data.plot, annotation_row = info_row, annotation_col = col_anno,  color = col, clustering_distance_cols="correlation",
+                 annotation_colors = ann_colors,
+                 cluster_cols=order.sample,
                  cluster_rows = F,
                  fontsize = 6.5,
-                 fontsize_row=3,
+                 fontsize_row=1,
                  fontsize_col = 2)
   return(pt)
 }
@@ -544,7 +565,7 @@ RunSEQ <- function(x=NULL, dds = NULL, initial_filter="rowSum", Col_Data=NULL, o
   counter_raw_data <- Y$dds[ rowSums(counts(Y$dds)) > 1, ]
 
   sampledata <- colData(Y$dds)
-  
+
   x_type = "VST_ZScore"
   for (x_type in c("VST", "VST_ZScore", "median", "VST_RANK_Row", "VST_RANK_Col", "DESEQ", "log2", "RANK_Row","RANK_Col", "RANK_Row_DESEQ","RANK_Col_DESEQ", "log2_DESEQ", "ZScore","ZScore_DESEQ")) {
     ## Selection of normalisation approaches #####
@@ -656,7 +677,7 @@ RunSEQ <- function(x=NULL, dds = NULL, initial_filter="rowSum", Col_Data=NULL, o
     lines(density(rowMeans(counter_dd)), lwd=3, col="blue")
     lines(density(apply(counter_dd, 1, median)), lwd=3, col="Yellow")
     dev.off()
-    
+
     print("dim before outlier replacement by mean 1%-99% margin")
     print(dim(counter_dd))
     if (outlier_type=="Quantile") {
@@ -683,7 +704,7 @@ RunSEQ <- function(x=NULL, dds = NULL, initial_filter="rowSum", Col_Data=NULL, o
     lines(density(apply(counter_dd, 1, median)), lwd=3, col="Yellow")
     dev.off()
     print(dim(counter_dd))
-    
+
     ## Remove batch effect ####
     mod = model.matrix(~as.factor(sample_type) + as.factor(batch2), data=sampledata)
     mod0 = model.matrix(~+ as.factor(batch2), data=sampledata)
@@ -775,7 +796,7 @@ RunSEQ <- function(x=NULL, dds = NULL, initial_filter="rowSum", Col_Data=NULL, o
       plot(fit.lognormal)
       dev.off()
     }
-    
+
     #------ uniform distribution -----#
     print("Fitting data to uniform distribution")
     png(paste0(prefix,"_", x_type ,"_gene_of_interest_fitting_to_unif_distribution.png"))
@@ -799,22 +820,22 @@ RunSEQ <- function(x=NULL, dds = NULL, initial_filter="rowSum", Col_Data=NULL, o
     #Check if this has NA
     #length_row = length(poisd_sample_gene_of_interest)
     #bv_sum = sum(is.na(poisd_sample_gene_of_interest))
-    #check_NA_matix = bv_sum - length_row 
+    #check_NA_matix = bv_sum - length_row
     #if (check_NA_matix>(-length_row)) {
     #  poisd_sample_gene_of_interest = 1- t(gene_list_of_interest) #parallelDist(t(gene_list_of_interest))
     #}
-    
+
     #-----NOTE: It requires alot of memory ----!!!
     #poisd_sample_gene_corrected <- PoissonDistance(t(gene_exp_corrected))$dd
     #Check if this has NA
     #length_row = length(poisd_sample_gene_corrected)
     #bv_sum = sum(is.na(poisd_sample_gene_corrected))
-    #check_NA_matix = bv_sum - length_row 
+    #check_NA_matix = bv_sum - length_row
     #if (check_NA_matix>(-length_row)) {
     #  poisd_sample_gene_corrected = 1 - cor(t(gene_exp_corrected))
     #  print("Sample distance: genes corrected: pearson distance ")
     #}else {
-    #  print("Sample distance: genes corrected: poisson distance ") 
+    #  print("Sample distance: genes corrected: poisson distance ")
     #}
     #---- Calculate the distance Euclidean -
     #dist_gene_of_interest = parallelDist(gene_list_of_interest)
@@ -880,7 +901,7 @@ RunSEQ <- function(x=NULL, dds = NULL, initial_filter="rowSum", Col_Data=NULL, o
     #Cluster_data$selected$PAM_row = kmrow_gene_of_interest
     #Cluster_data$selected$PAM_col = kmcol_gene_of_interest
     #All genes
-    
+
     #Cluster_data$all$hr = hr_all
     #Cluster_data$all$dist_row = dist_gene_corrected
     #Cluster_data$all$hc = hc_all
@@ -891,23 +912,23 @@ RunSEQ <- function(x=NULL, dds = NULL, initial_filter="rowSum", Col_Data=NULL, o
     print(paste0("Number of all genes: ", nrow(gene_exp_corrected)))
     print(paste0("Number of selected genes: ", nrow(gene_list_of_interest)))
 
-    
+
     #Data prepration
     df_class = data.frame(SampleType=as.factor(sampledata$sample_type), Batch = as.factor(sampledata$batch2), Batch_by_day= as.factor(sampledata$batch))
     rownames(df_class) = sampledata$SampleID
-    
+
     ann_colors = list(
       SampleType = greenscale(length(levels(df_class$SampleType))), # c(T = "#7570B3", N = "#E7298A"),
       #SampleClass = redscale(max(x_itm$PAM_col)),
       Batch = blues9[1:length(levels(df_class$Batch))],
       Batch_by_day = rainbow(length(levels(df_class$Batch_by_day))),
       gene_class = rainbow(7))
-    
+
     names(ann_colors$SampleType) = levels(df_class$SampleType)
     #names(ann_colors$SampleClass) = levels(df_class$SampleClass)
     names(ann_colors$Batch) = levels(df_class$Batch)
     names(ann_colors$Batch_by_day) = levels(df_class$Batch_by_day)
-    
+
     for (x_itm in Cluster_data){
         print(paste0("Proc: ", x_itm$name))
         #---Prepare the annotation data ---
@@ -923,26 +944,26 @@ RunSEQ <- function(x=NULL, dds = NULL, initial_filter="rowSum", Col_Data=NULL, o
         title=tempdir()
         results_COCA_R = ConsensusClusterPlus(gene_for_heatmap,maxK=20,reps=1000,pItem=0.8,pFeature=1, title=title,clusterAlg="hc",distance="pearson",seed=1262118388.71279,plot="png")
         icl = calcICL(results_COCA_R,title=title,plot="png")
-  
-        #Get the recommended cluster number 
+
+        #Get the recommended cluster number
         recommend_cluster = get_cluster_number(icl=icl, prefix_id = prefix, normalization_id = x_type, data_type_id = x_itm$name)
         df_class$COCA = as.factor(results_COCA_R[[recommend_cluster]]$consensusClass)
         ann_colors$COCA = redgreen(recommend_cluster)
         cutree_col =results_COCA_R[[recommend_cluster]]$consensusTree
         cutree_col$labels = colnames(gene_for_heatmap)
         names(ann_colors$COCA) = levels(df_class$COCA)
-        
+
         recommend_cluster_x = get_cluster_number_based_on_Consensus(icl=icl, prefix_id = prefix, normalization_id = x_type, data_type_id = x_itm$name)
         df_class$COCA_2 = as.factor(results_COCA_R[[recommend_cluster_x]]$consensusClass)
         ann_colors$COCA_2 = redgreen(recommend_cluster_x)
         names(ann_colors$COCA_2) = levels(df_class$COCA_2)
-        
+
         if (x_itm$name=="selected") {
           Cluster_data$selected$COCA =results_COCA_R
         } else {
           Cluster_data$all$COCA =results_COCA_R
         }
-        
+
         #--- cluster gene using NbClust---#
         library("NbClust")
         set.seed(123)
@@ -954,17 +975,27 @@ RunSEQ <- function(x=NULL, dds = NULL, initial_filter="rowSum", Col_Data=NULL, o
         ggsave(paste(prefix,x_type,x_itm$name,"_clustering.png",sep="_"))
         best_cluster = nb$Best.partition
         df_row = data.frame(gene_class = as.factor(best_cluster))
-        rownames(df_row) = names(best_cluster) 
+        rownames(df_row) = names(best_cluster)
         ann_colors$gene_class =  rainbow(length(levels(df_row$gene_class)))
         names(ann_colors$gene_class) = levels(df_row$gene_class)
         detach("package:NbClust", unload=TRUE)
-        
+
         #----cluster gene using tight cluster ---#
         print("Running: Tight cluster for gene clustering...")
         library(tightClust)
-        h_tightclust <- getTightCluster(x=gene_for_heatmap)
-        pheatmap_tclust <- generate_pheatmap_from_tight_cluster(h_tightclust)
-        save_pheatmap_pdf(pheatmap_tclust, paste0(prefix,"_", x_type, "_", x_itm$name ,"_noise_filtered_tight_clust_gene_heatmap.pdf"), width =20, height=20)
+        
+        gene_for_heatmap_c = gene_for_heatmap - rowMeans(gene_for_heatmap)
+        gene_for_heatmap_c[gene_for_heatmap_c>5] <- 4.9
+        gene_for_heatmap_c[gene_for_heatmap_c<(-5)] <- -4.9
+        h_tightclust <- getTightCluster(x=gene_for_heatmap_c, standardize.gene = F)
+        col_anno = data.frame(SampleType = df_class$SampleType)
+        rownames(col_anno) = rownames(df_class)
+        pheatmap_tclust <- generate_pheatmap_from_tight_cluster(h_tightclust, standardize.gene = F, order.sample = "SampleType", col_anno = col_anno)
+        save_pheatmap_pdf(pheatmap_tclust, paste0(prefix,"_", x_type, "_", x_itm$name ,"_noise_filtered_tight_clust_gene_heatmap.pdf"), width =25, height=25)
+        
+        df_row$gene_tclust = as.factor(h_tightclust$cluster)
+        ann_colors$gene_tclust = rainbow(length(levels(df_row$gene_tclust)))
+        names(ann_colors$gene_tclust) = levels(df_row$gene_tclust)
         
         if (x_itm$name=="selected") {
           Cluster_data$selected$Voting_gene_Cluster =nb
@@ -973,48 +1004,53 @@ RunSEQ <- function(x=NULL, dds = NULL, initial_filter="rowSum", Col_Data=NULL, o
           Cluster_data$all$Voting_gene_Cluster =nb
           Cluster_data$selected$htclust = h_tightclust
         }
-        
+
         detach("package:tightClust", unload=TRUE)
-        
-        #---cluster gene using mclust EM ----#
+
+        #---cluster samples using mclust EM ----#
         library(mclust)
-        gene_g_top = t(gene_for_heatmap)
+        gene_g_top =t(gene_for_heatmap)
         BIC <- mclustBIC(gene_g_top)
-        
+
         png(paste0(prefix,"_", x_type, "_", x_itm$name ,"_mclust_BIC_gene_plot.png"))
         plot(BIC)
         dev.off()
-        
+
         print(summary(BIC))
         mod1 <- Mclust(gene_g_top, x = BIC)
-        
+
         tbl_sample_distribution = table(mod1$classification)
         print(table(mod1$classification))
+        print(length(mod1$classification))
         print(prop.table(tbl_sample_distribution)*100)
-        
+
         print("Running: ICL for EM model...")
         ICL = mclustICL(gene_g_top)
         print(summary(ICL))
-        
-        LRT = mclustBootstrapLRT(X, modelName = "VVV")
-        print(LRT)
-        
+
+        #LRT = mclustBootstrapLRT(gene_g_top, modelName = "VVV")
+        #print(LRT)
+
         png(paste0(prefix,"_", x_type, "_", x_itm$name ,"_mclust_gene_plot_icl.png"))
         plot(ICL)
         dev.off()
         #Add the cluster EM to the annotation
-        df_row$gene_class_EM = as.factor(mod1$classification)
-        #rownames(df_row) = names(best_cluster) 
-        ann_colors$gene_class_EM =  rainbow(length(levels(df_row$gene_class_EM)))
-        names(ann_colors$gene_class_EM) = levels(df_row$gene_class_EM)
-        
-        #Get the pearson distance
-        par_dis<-as.dist(1-cor(gene_for_heatmap));
+        df_class$sample_class_EM = as.factor(mod1$classification)
+        #rownames(df_row) = names(best_cluster)
+        ann_colors$sample_class_EM =  rainbow(length(levels(df_class$sample_class_EM)))
+        names(ann_colors$sample_class_EM) = levels(df_class$sample_class_EM)
+
         ##---- Generate Heatmap -----##
         print("Generate the heat map....")
-        ptl_heatmap = pheatmap(gene_for_heatmap,
+        gene_for_heatmap_c  <- gene_for_heatmap - rowMeans(gene_for_heatmap)
+        gene_for_heatmap_c[gene_for_heatmap_c>5] <- 4.9
+        gene_for_heatmap_c[gene_for_heatmap_c<(-5)] <- -4.9
+        #Get the pearson distance
+        par_dis<-as.dist(1-cor(gene_for_heatmap_c));
+        
+        ptl_heatmap = pheatmap(gene_for_heatmap_c,
                                clustering_distance_cols = par_dis,
-                               clustering_distance_rows = parallelDist(gene_for_heatmap),
+                               clustering_distance_rows = parallelDist(gene_for_heatmap_c),
                                annotation_row = df_row,
                                annotation_col = df_class,
                                fontsize = 6.5,
@@ -1023,7 +1059,7 @@ RunSEQ <- function(x=NULL, dds = NULL, initial_filter="rowSum", Col_Data=NULL, o
                                fontsize_col = 6,
                                annotation_colors = ann_colors,
                                col = rev(brewer.pal(n = 11, name = "RdBu")))
-        
+
         save_pheatmap_pdf(ptl_heatmap, paste0(prefix,"_", x_type, "_", x_itm$name ,"_gene_heatmap.pdf"), width =40, height=40)
 
 
@@ -1038,6 +1074,8 @@ RunSEQ <- function(x=NULL, dds = NULL, initial_filter="rowSum", Col_Data=NULL, o
         print(rownames(gene_for_heatmap[topVarGenes,]))
         mat  <- gene_for_heatmap[topVarGenes,]
         mat  <- mat - rowMeans(mat)
+        mat[mat>5] <- 4.9
+        mat[mat<(-5)] <- -4.9
         anno <- df_class
         min(mat)
         max(mat)
@@ -1052,7 +1090,7 @@ RunSEQ <- function(x=NULL, dds = NULL, initial_filter="rowSum", Col_Data=NULL, o
         anno$COCA = as.factor(results_COCA_R[[recommend_cluster]]$consensusClass)
         ann_colors$COCA = redgreen(recommend_cluster)
         names(ann_colors$COCA) = levels(anno$COCA)
-        
+
         #2. Genewise
         print("----Genewise----")
         title=tempdir()
@@ -1063,12 +1101,12 @@ RunSEQ <- function(x=NULL, dds = NULL, initial_filter="rowSum", Col_Data=NULL, o
         df_row = data.frame(gene_COCA = as.factor(results_COCA_R[[recommend_cluster]]$consensusClass))
         ann_colors$gene_COCA = blueyellow(recommend_cluster)
         names(ann_colors$gene_COCA) = levels(df_row$gene_COCA)
-        
+
         recommend_cluster_x = get_cluster_number_based_on_Consensus(icl=icl, prefix_id = prefix, normalization_id = x_type, data_type_id = paste0(x_itm$name, "top_genes_genewise"))
         df_row$gene_COCA_2 = as.factor(results_COCA_R[[recommend_cluster_x]]$consensusClass)
         ann_colors$gene_COCA_2 = blueyellow(recommend_cluster_x)
         names(ann_colors$gene_COCA_2) = levels(df_row$gene_COCA_2)
-        
+
         #3. Gene 2. approach nbclust
         set.seed(123)
         library(NbClust)
@@ -1082,16 +1120,24 @@ RunSEQ <- function(x=NULL, dds = NULL, initial_filter="rowSum", Col_Data=NULL, o
         detach("package:NbClust", unload=TRUE)
         best_cluster = nb$Best.partition
         df_row$gene_class = as.factor(best_cluster)
-        rownames(df_row) = names(best_cluster) 
+        rownames(df_row) = names(best_cluster)
         ann_colors$gene_class =  rainbow(length(levels(df_row$gene_class)))
         names(ann_colors$gene_class) = levels(df_row$gene_class)
+        
         #3. Gene 3. approach tight cluster
         library(tightClust)
         print("Running: Tight cluster for gene clustering...")
-        h_tightclust <- getTightCluster(x=gene_for_heatmap)
-        pheatmap_tclust <- generate_pheatmap_from_tight_cluster(h_tightclust)
+        h_tightclust <- getTightCluster(x=mat)
+        col_anno = data.frame(SampleType = anno$SampleType)
+        rownames(col_anno) = rownames(df_class)
+        pheatmap_tclust <- generate_pheatmap_from_tight_cluster(h_tightclust, standardize.gene = F, order.sample = "SampleType", col_anno = col_anno)
         save_pheatmap_pdf(pheatmap_tclust, paste0(prefix,"_", x_type, "_", x_itm$name ,"_noise_filtered_tight_clust_top_gene_heatmap.pdf"), width =10, height=10)
-       
+        length(h_tightclust$cluster)
+        df_row$gene_tclust = as.factor(h_tightclust$cluster)
+        ann_colors$gene_tclust = rainbow(length(levels(df_row$gene_tclust)))
+        names(ann_colors$gene_tclust) = levels(df_row$gene_tclust)
+        
+        
         #Save the results.
         if (x_itm$name=="selected") {
           Cluster_data$selected$top_gene_voting_gene_Cluster =nb
@@ -1100,29 +1146,29 @@ RunSEQ <- function(x=NULL, dds = NULL, initial_filter="rowSum", Col_Data=NULL, o
           Cluster_data$all$top_gene_voting_gene_Cluster =nb
           Cluster_data$all$top_gene_voting_gene_Cluster = pheatmap_tclust
         }
-        
+
         detach("package:tightClust", unload=TRUE)
         #4. Gene 4. model-based clustering (Gaussian finite mixture model fitted by EM algorithm)
         print("Running: Model-based clustering using mclust...")
         #library(mclust)
         gene_g_top = t(mat)
         BIC <- mclustBIC(gene_g_top)
-        
+
         png(paste0(prefix,"_", x_type, "_", x_itm$name ,"_mclust_BIC_top_gene_plot.png"))
         plot(BIC)
         dev.off()
-        
+
         print(summary(BIC))
         mod1 <- Mclust(gene_g_top, x = BIC)
         #print(summary(mod1, parameters = TRUE))
-        
+
         #png(paste0(prefix,"_", x_type, "_", x_itm$name ,"_mclust_BIC_top_gene_plot_matrix.png"))
         #plot(mod1, what = "classification")
         #dev.off()
         tbl_sample_distribution = table(mod1$classification)
         print(table(mod1$classification))
         print(prop.table(tbl_sample_distribution)*100)
-        
+
         #par(mfrow = c(2,2))
         #png(paste0(prefix,"_", x_type, "_", x_itm$name ,"_mclust_top_gene_plot_uncertainty_2_1_dim_matrix.png"))
         #plot(mod1, what = "uncertainty", dimens = c(2,1), main = "")
@@ -1137,19 +1183,22 @@ RunSEQ <- function(x=NULL, dds = NULL, initial_filter="rowSum", Col_Data=NULL, o
         print("Running: ICL for EM model...")
         ICL = mclustICL(gene_g_top)
         print(summary(ICL))
-        
-        LRT = mclustBootstrapLRT(X, modelName = "VVV")
-        print(LRT)
-        
+
+        ####
+        #LRT = mclustBootstrapLRT(gene_g_top, modelName = "VVV")
+        #print(LRT)
+        ####
         png(paste0(prefix,"_", x_type, "_", x_itm$name ,"_mclust_top_gene_plot_icl.png"))
         plot(ICL)
         dev.off()
         #Add the cluster EM to the annotation
-        df_row$gene_class_EM = as.factor(mod1$classification)
-        #rownames(df_row) = names(best_cluster) 
-        ann_colors$gene_class_EM =  rainbow(length(levels(df_row$gene_class_EM)))
-        names(ann_colors$gene_class_EM) = levels(df_row$gene_class_EM)
+        #Add the cluster EM to the annotation
+        anno$sample_class_EM = as.factor(mod1$classification)
+        #rownames(df_row) = names(best_cluster)
+        ann_colors$sample_class_EM =  rainbow(length(levels(anno$sample_class_EM)))
+        names(ann_colors$sample_class_EM) = levels(anno$sample_class_EM)
         
+
         #5. Generate the heatmap
         print("Generating heatmap for top variable genes....")
         #Get the pearson distance
