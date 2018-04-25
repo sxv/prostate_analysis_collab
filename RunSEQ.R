@@ -979,7 +979,7 @@ RunSEQ <- function(x=NULL, dds = NULL, initial_filter="rowSum", Col_Data=NULL, o
         rownames(df_row) = names(best_cluster)
         ann_colors$gene_class =  rainbow(length(levels(df_row$gene_class)))
         names(ann_colors$gene_class) = levels(df_row$gene_class)
-        detach("package:NbClust", unload=TRUE)
+        #detach("package:NbClust", unload=TRUE)
         
         #----cluster gene using tight cluster ---#
         if (x_itm$name=="selected") {
@@ -998,7 +998,7 @@ RunSEQ <- function(x=NULL, dds = NULL, initial_filter="rowSum", Col_Data=NULL, o
         df_row$gene_tclust = as.factor(h_tightclust$cluster)
         ann_colors$gene_tclust = rainbow(length(levels(df_row$gene_tclust)))
         names(ann_colors$gene_tclust) = levels(df_row$gene_tclust)
-        detach("package:tightClust", unload=TRUE)
+        #detach("package:tightClust", unload=TRUE)
         }
         ##---- Deactivated memory issue -----#####
         #if (x_itm$name=="selected") {
@@ -1040,7 +1040,7 @@ RunSEQ <- function(x=NULL, dds = NULL, initial_filter="rowSum", Col_Data=NULL, o
         ann_colors$sample_class_EM =  rainbow(length(levels(df_class$sample_class_EM)))
         names(ann_colors$sample_class_EM) = levels(df_class$sample_class_EM)
         #Remove the library
-        detach("package:mclust", unload=TRUE)
+        #detach("package:mclust", unload=TRUE)
         }
 
         ##---- Generate Heatmap -----##
@@ -1133,7 +1133,7 @@ RunSEQ <- function(x=NULL, dds = NULL, initial_filter="rowSum", Col_Data=NULL, o
         rownames(df_row) = names(best_cluster)
         ann_colors$gene_class =  rainbow(length(levels(df_row$gene_class)))
         names(ann_colors$gene_class) = levels(df_row$gene_class)
-        detach("package:NbClust", unload=TRUE)
+        #detach("package:NbClust", unload=TRUE)
         
         
         #3. Gene 3. approach tight cluster
@@ -1149,7 +1149,7 @@ RunSEQ <- function(x=NULL, dds = NULL, initial_filter="rowSum", Col_Data=NULL, o
         df_row$gene_tclust = as.factor(h_tightclust$cluster)
         ann_colors$gene_tclust = rainbow(length(levels(df_row$gene_tclust)))
         names(ann_colors$gene_tclust) = levels(df_row$gene_tclust)
-        detach("package:tightClust", unload=TRUE)
+        #detach("package:tightClust", unload=TRUE)
         #}
         #Deactivate because of memory issue.
         #Save the results.
@@ -1188,7 +1188,7 @@ RunSEQ <- function(x=NULL, dds = NULL, initial_filter="rowSum", Col_Data=NULL, o
         anno$sample_class_EM = as.factor(mod1$classification)
         ann_colors$sample_class_EM =  rainbow(length(levels(anno$sample_class_EM)))
         names(ann_colors$sample_class_EM) = levels(anno$sample_class_EM)
-        detach("package:mclust", unload=TRUE)
+        #detach("package:mclust", unload=TRUE)
         #}
 
         #5. Save the annotation samples and gene
