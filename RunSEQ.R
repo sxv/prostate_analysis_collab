@@ -1202,7 +1202,7 @@ RunSEQ <- function(x=NULL, dds = NULL, initial_filter="rowSum", Col_Data=NULL, o
         #5. Generate the heatmap
         print("Generating heatmap for top variable genes....")
         #Get the pearson distance
-        dist_mat =parallelDist(t(mat))
+        #dist_mat =parallelDist(t(mat))
         #par_dis<-as.dist(1-cor(mat));
         ptl_heatmap = pheatmap(mat, annotation_col = anno, annotation_colors= ann_colors,
                                annotation_row=df_row, clustering_distance_rows="euclidean", # "correlation",
