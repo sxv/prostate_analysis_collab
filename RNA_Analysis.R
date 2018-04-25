@@ -20,7 +20,7 @@ if("slam" %in% rownames(installed.packages()) == FALSE) {
   slam_url <- "https://cran.r-project.org/src/contrib/Archive/slam/slam_0.1-37.tar.gz"
   install_url(slam_url)}
 
-packages<-c("som","dplyr", "ggbeeswarm", "readr","ggplot2", "pheatmap", "magrittr", "MASS", "psych", "RColorBrewer", "ape")
+packages<-c("dplyr", "ggbeeswarm", "readr","ggplot2", "pheatmap", "magrittr", "MASS", "psych", "RColorBrewer", "ape")
 biopackages <- c("preprocessCore", "BiocParallel", "PoiClaClu", "ConsensusClusterPlus", "GenomicFeatures", "DESeq2", "vsn", "sva", "ReportingTools", "IHW","Glimma")
 check.packages(packages)
 check.biocLites(biopackages)
