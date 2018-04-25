@@ -968,9 +968,9 @@ RunSEQ <- function(x=NULL, dds = NULL, initial_filter="rowSum", Col_Data=NULL, o
         #--- cluster gene using NbClust---#
         library("NbClust")
         set.seed(123)
-        print("Perform Nbclust to determine the best partition of genes...(silhouette) (performing all 30 tests takes minutes till hours)")
+        print("Perform Nbclust to determine the best partition of genes...(gap/silhouette) (performing all 30 tests takes minutes till hours)")
         nb <- NbClust(gene_for_heatmap, distance = "euclidean", min.nc = 2,
-                      max.nc = 20, method = "kmeans", index ="silhouette")
+                      max.nc = 20, method = "kmeans", index ="gap")
         #print(fviz_nbclust(nb) + theme_minimal())
         print(nb)
         ggsave(paste(prefix,x_type,x_itm$name,"_clustering.png",sep="_"))
@@ -1121,9 +1121,9 @@ RunSEQ <- function(x=NULL, dds = NULL, initial_filter="rowSum", Col_Data=NULL, o
         #3. Gene 2. approach nbclust
         set.seed(123)
         library(NbClust)
-        print("Perform Nbclust to determine the best partition of genes (silhouette)... (Takes minutes till hours)")
+        print("Perform Nbclust to determine the best partition of genes (gap/silhouette)... (Takes minutes till hours)")
         nb <- NbClust(mat, distance = "euclidean", min.nc = 2,
-                      max.nc = 20, method = "kmeans", index ="silhouette")
+                      max.nc = 20, method = "kmeans", index ="gap")
         print(nb)
         #print(fviz_nbclust(nb) + theme_minimal())
         ggsave(paste(prefix,x_type,x_itm$name, "_top_gene_clustering.png",sep="_"))
