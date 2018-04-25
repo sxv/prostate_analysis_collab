@@ -1010,7 +1010,7 @@ RunSEQ <- function(x=NULL, dds = NULL, initial_filter="rowSum", Col_Data=NULL, o
         #}
         
         
-        #---cluster samples using mclust EM ----#
+        ##---cluster samples using mclust EM ----####
         #Consums alot of memory. Minimum 128 GB for >17000 genes.
         if (x_itm$name=="selected") {
         library(mclust)
@@ -1056,8 +1056,8 @@ RunSEQ <- function(x=NULL, dds = NULL, initial_filter="rowSum", Col_Data=NULL, o
         col_anno2$sample_id = rownames(col_anno)
         df_row2 = df_row
         df_row2$gene_id = rownames(df_row)
-        write.csv2(col_anno2,paste0(prefix, "_", x_type, "_", x_itm$name, "_genes_sample_cluster_annotation.csv"), row.names=F, col.names=T)
-        write.csv2(df_row2,paste0(prefix, "_", x_type, "_", x_itm$name, "_genes_gene_cluster_annotation.csv"), rownames=F, colnames=T)
+        write.table(col_anno2,paste0(prefix, "_", x_type, "_", x_itm$name, "_genes_sample_cluster_annotation.csv"), row.names=F, col.names=T)
+        write.table(df_row2,paste0(prefix, "_", x_type, "_", x_itm$name, "_genes_gene_cluster_annotation.csv"), rownames=F, colnames=T)
 
         ptl_heatmap = pheatmap(gene_for_heatmap_c,
                                clustering_distance_cols = par_dis,
@@ -1196,8 +1196,8 @@ RunSEQ <- function(x=NULL, dds = NULL, initial_filter="rowSum", Col_Data=NULL, o
         col_anno2$sample_id = rownames(anno)
         df_row2 = df_row
         df_row2$gene_id = rownames(df_row)
-        write.csv2(anno,paste0(prefix, "_", x_type, "_", x_itm$name, "_top_genes_sample_cluster_annotation.csv"), row.names=F, col.names=T)
-        write.csv2(df_row,paste0(prefix, "_", x_type, "_", x_itm$name, "_top_genes_gene_cluster_annotation.csv"), rownames=F, colnames=T)
+        write.table(anno,paste0(prefix, "_", x_type, "_", x_itm$name, "_top_genes_sample_cluster_annotation.csv"), sep=",", row.names=F, col.names=T)
+        write.table(df_row,paste0(prefix, "_", x_type, "_", x_itm$name, "_top_genes_gene_cluster_annotation.csv"), sep=",", rownames=F, colnames=T)
         #6. Generate the heatmap
         print("Generating heatmap for top variable genes....")
         ptl_heatmap = pheatmap(mat, annotation_col = anno, annotation_colors= ann_colors,
