@@ -6,24 +6,24 @@ check.packages <- function(pkg){
   sapply(pkg, require, character.only = TRUE)
 }
 
-check.biocLites <- function(pkg){
-  source("http://bioconductor.org/biocLite.R")
-  new.pkg <- pkg[!(pkg %in% installed.packages()[, "Package"])]
-  if (length(new.pkg))
-    biocLite(new.pkg)
-  sapply(pkg, require, character.only = TRUE)
-}
+#check.biocLites <- function(pkg){
+#  source("http://bioconductor.org/biocLite.R")
+#  new.pkg <- pkg[!(pkg %in% installed.packages()[, "Package"])]
+#  if (length(new.pkg))
+#    biocLite(new.pkg)
+#  sapply(pkg, require, character.only = TRUE)
+#}
 
-if("slam" %in% rownames(installed.packages()) == FALSE) {
-  install.packages('devtools')
-  library(devtools)
-  slam_url <- "https://cran.r-project.org/src/contrib/Archive/slam/slam_0.1-37.tar.gz"
-  install_url(slam_url)}
+#if("slam" %in% rownames(installed.packages()) == FALSE) {
+#  install.packages('devtools')
+#  library(devtools)
+#  slam_url <- "https://cran.r-project.org/src/contrib/Archive/slam/slam_0.1-37.tar.gz"
+#  install_url(slam_url)}
 
-packages<-c("som","dplyr", "ggbeeswarm", "readr","ggplot2", "pheatmap", "magrittr", "MASS", "psych", "RColorBrewer", "ape")
-biopackages <- c("preprocessCore", "BiocParallel", "PoiClaClu", "ConsensusClusterPlus", "GenomicFeatures", "DESeq2", "vsn", "sva", "ReportingTools", "IHW","Glimma")
-check.packages(packages)
-check.biocLites(biopackages)
+#packages<-c("som","dplyr", "ggbeeswarm", "readr","ggplot2", "pheatmap", "magrittr", "MASS", "psych", "RColorBrewer", "ape")
+#biopackages <- c("preprocessCore", "BiocParallel", "PoiClaClu", "ConsensusClusterPlus", "GenomicFeatures", "DESeq2", "vsn", "sva", "ReportingTools", "IHW","Glimma")
+#check.packages(packages)
+#check.biocLites(biopackages)
 
 library(preprocessCore)#
 #library(som)#
