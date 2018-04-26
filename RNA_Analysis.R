@@ -324,8 +324,7 @@ for (itm in list_gene_findings_upregulated) {
   if (is.na(df)) {
     df = data.frame(itmx)
     colnames(df) = col_list[counter]
-  }
-  else {
+  } else {
     df[[col_list[counter]]] <- itmx
   }
   counter = counter + 1
@@ -356,8 +355,7 @@ for (itm in list_gene_findings_downregulated) {
   if (is.na(df)) {
     df = data.frame(itmx)
     colnames(df) = col_list[counter]
-  }
-  else {
+  } else {
     df[[col_list[counter]]] <- itmx
   }
   counter = counter + 1
