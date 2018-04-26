@@ -1167,7 +1167,7 @@ RunSEQ <- function(x=NULL, dds = NULL, initial_filter="rowSum", Col_Data=NULL, o
 
         #if (x_itm$name=="selected") {
         #4. Gene 4. model-based clustering (Gaussian finite mixture model fitted by EM algorithm)
-        print("Proc 4: Nbclust")
+        print("Proc 4: mclust")
         print("Running: Model-based clustering using mclust...")
         library(mclust)
         gene_g_top = t(mat)
