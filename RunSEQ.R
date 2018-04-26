@@ -686,11 +686,9 @@ RunSEQ <- function(x=NULL, dds = NULL, initial_filter="rowSum", Col_Data=NULL, o
     if (outlier_type=="Quantile") {
       counter_dd <- remove_outliers(counter_dd)
       counter_dd <- na.omit(counter_dd)
-    }
-    else if (outlier_type == "MVO") {
+    } else if (outlier_type == "MVO") {
       print("Not implemented.")
-    }
-    else {
+    } else {
       print("Additional outlier not performed.")
     }
 
