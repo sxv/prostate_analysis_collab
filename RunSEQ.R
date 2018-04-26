@@ -94,6 +94,7 @@ gm_mean = function(x, na.rm=TRUE){
   exp(sum(log(x[x > 0]), na.rm=na.rm) / length(x))
 }
 #Get the result with lowest changes
+#x = table_icl
 get_recursive_cluster_number <- function(x=NA) {
   #x = x[order(x$k),]
   length_x = nrow(x)
@@ -129,10 +130,12 @@ get_recursive_cluster_number <- function(x=NA) {
       select_to_cluster = x$k[s_index+1]
       print("Changed back")
     }
-    if ((current_mean_itm-current_sem_itm) < (next_mean_itm+next_sem_itm)) {
+    if ((current_mean_itm-current_sem_itm) > (next_mean_itm+next_sem_itm)) {
       if ((next_mean_itm+next_sem_itm)<(previous_mean_itm-previous_sem_itm)) {
+        if(abs(next_mean_itm-current_mean_itm) > (abs(previous_mean_itm-current_mean_itm))) {
         select_to_cluster = x$k[s_index-1]
         print("Changed forward")
+        }
       }
     }
   }
@@ -173,7 +176,7 @@ get_cluster_number <- function(icl=NA, prefix_id, normalization_id, data_type_id
   recommend_cluster = get_recursive_cluster_number(table_icl)#table_icl$k[1]
   print(paste("Cluster recommended:", recommend_cluster))
   png(paste0(prefix_id, "_", normalization_id, "_", data_type_id,"_cluster_sample.png"))
-  plot(x=table_icl$k, y=table_icl$mean_vle)
+  plot(x=table_icl$k, y=table_icl$mean_vle, col=ifelse(x==recommend_cluster, "red", "black"))
   dev.off()
   return(recommend_cluster)
 }
@@ -567,7 +570,7 @@ RunSEQ <- function(x=NULL, dds = NULL, initial_filter="rowSum", Col_Data=NULL, o
   sampledata <- colData(Y$dds)
 
   x_type = "VST_ZScore"
-  for (x_type in c("VST", "VST_ZScore", "median", "VST_RANK_Row", "VST_RANK_Col", "DESEQ", "log2", "RANK_Row","RANK_Col", "RANK_Row_DESEQ","RANK_Col_DESEQ", "log2_DESEQ", "ZScore","ZScore_DESEQ")) {
+  for (x_type in c("VST_ZScore","DESEQ", "ZScore","ZScore_DESEQ", "VST_RANK_Row", "VST_RANK_Col",  "log2", "RANK_Row","RANK_Col", "RANK_Row_DESEQ","RANK_Col_DESEQ", "log2_DESEQ")) {
     ## Selection of normalisation approaches #####
     print(paste0("Selected normalisation approach: ", x_type))
     if (x_type == "VST") {
@@ -699,7 +702,6 @@ RunSEQ <- function(x=NULL, dds = NULL, initial_filter="rowSum", Col_Data=NULL, o
     colramp = colorRampPalette(c(3,"white",2))(ncol(Y$dds))
     plot(density(counter_dd[,1]),col=colramp[1],lwd=3,ylim=c(0,10), xlim=c(min(counter_dd),max(counter_dd)))
     for(i in 2:ncol(Y$dds)){lines(density(counter_dd[,i]),lwd=3,col=colramp[i])}
-    #lines(density(apply(counter_dd, 1, geometric.mean)), lwd=3, col="black")
     lines(density(rowMeans(counter_dd)), lwd=3, col="blue")
     lines(density(apply(counter_dd, 1, median)), lwd=3, col="Yellow")
     dev.off()
@@ -731,7 +733,6 @@ RunSEQ <- function(x=NULL, dds = NULL, initial_filter="rowSum", Col_Data=NULL, o
     colramp = colorRampPalette(c(3,"white",2))(ncol(Y$dds))
     plot(density(gene_list_of_interest[,1]),col=colramp[1],lwd=3,ylim=c(0,3), xlim=c(min(gene_list_of_interest), max(gene_list_of_interest)))
     for(i in 2:ncol(Y$dds)){lines(density(gene_list_of_interest[,i]),lwd=3,col=colramp[i])}
-    lines(density(apply(gene_list_of_interest, 1, geometric.mean)), lwd=3, col="black")
     lines(density(rowMeans(gene_list_of_interest)), lwd=3, col="blue")
     lines(density(apply(gene_list_of_interest, 1, median)), lwd=3, col="Yellow")
     dev.off()
@@ -1148,7 +1149,7 @@ RunSEQ <- function(x=NULL, dds = NULL, initial_filter="rowSum", Col_Data=NULL, o
         col_anno = data.frame(SampleType = anno$SampleType)
         rownames(col_anno) = rownames(df_class)
         pheatmap_tclust <- generate_pheatmap_from_tight_cluster(h_tightclust, standardize.gene = F, order.sample = "SampleType", col_anno = col_anno)
-        save_pheatmap_pdf(pheatmap_tclust, paste0(prefix,"_", x_type, "_", x_itm$name ,"_noise_filtered_tight_clust_top_gene_heatmap.pdf"), width =10, height=10)
+        save_pheatmap_pdf(pheatmap_tclust, paste0(prefix,"_", x_type, "_", x_itm$name ,"_noise_filtered_tight_clust_top_gene_heatmap.pdf"), width =40, height=40)
         length(h_tightclust$cluster)
         df_row$gene_tclust = as.factor(h_tightclust$cluster)
         ann_colors$gene_tclust = rainbow(length(levels(df_row$gene_tclust)))
@@ -1213,7 +1214,7 @@ RunSEQ <- function(x=NULL, dds = NULL, initial_filter="rowSum", Col_Data=NULL, o
                                fontsize_row=3,
                                fontsize_col = 2,
                                col = rev(brewer.pal(n = 11, name = "RdBu")))
-        save_pheatmap_pdf(ptl_heatmap, paste0(prefix, "_", x_type, "_", x_itm$name,"_top_variable_genes_heatmap.pdf"), width=10,height=10)
+        save_pheatmap_pdf(ptl_heatmap, paste0(prefix, "_", x_type, "_", x_itm$name,"_top_variable_genes_heatmap.pdf"), width=40,height=40)
     }
   }
   print("Done...")
