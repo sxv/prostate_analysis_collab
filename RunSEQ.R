@@ -176,7 +176,7 @@ get_cluster_number <- function(icl=NA, prefix_id, normalization_id, data_type_id
   recommend_cluster = get_recursive_cluster_number(table_icl)#table_icl$k[1]
   print(paste("Cluster recommended:", recommend_cluster))
   png(paste0(prefix_id, "_", normalization_id, "_", data_type_id,"_cluster_sample.png"))
-  plot(x=table_icl$k, y=table_icl$mean_vle, col=ifelse(x==recommend_cluster, "red", "black"))
+  plot(x=table_icl$k, y=table_icl$mean_vle, col=ifelse(table_icl$k==recommend_cluster, "red", "black"))
   dev.off()
   return(recommend_cluster)
 }
@@ -308,7 +308,7 @@ generate_pheatmap_from_tight_cluster <- function (x, standardize.gene = T, col_a
 #group_factor=c("sample_type", "batch", "SampleID")
 #contrast_list=c(levels(sample_Data_for_seq$sample_type))
 #Qutlier_type= None, Quantile,  MVO
-RunSEQ <- function(x=NULL, dds = NULL, initial_filter="rowSum", Col_Data=NULL, outlier_type="Quantile", transform_regulator="vst", set_cutoff=1, Run_Id=0, description_txt="", prefix="X", group_factor=c("sample_type", "batch", "SampleID"),  contrast_list=c(), PlayWithResults=FALSE) {
+RunSEQ <- function(x=NULL, dds = NULL, initial_filter="rowSum", Col_Data=NULL, outlier_type="None", transform_regulator="vst", set_cutoff=1, Run_Id=0, description_txt="", prefix="X", group_factor=c("sample_type", "batch", "SampleID"),  contrast_list=c(), PlayWithResults=FALSE) {
   filn_n = paste0(prefix, "_results.RData")
   if (file.exists(filn_n)) {
   load(file =  filn_n)
@@ -570,7 +570,7 @@ RunSEQ <- function(x=NULL, dds = NULL, initial_filter="rowSum", Col_Data=NULL, o
   sampledata <- colData(Y$dds)
 
   x_type = "VST_ZScore"
-  for (x_type in c("VST_ZScore","DESEQ", "ZScore","ZScore_DESEQ", "VST_RANK_Row", "VST_RANK_Col",  "log2", "RANK_Row","RANK_Col", "RANK_Row_DESEQ","RANK_Col_DESEQ", "log2_DESEQ")) {
+  for (x_type in c("VST_ZScore","DESEQ", "ZScore","ZScore_DESEQ", "VST", "RANK_Row","RANK_Col", "VST_RANK_Row", "VST_RANK_Col",  "log2", "RANK_Row_DESEQ","RANK_Col_DESEQ", "log2_DESEQ")) {
     ## Selection of normalisation approaches #####
     print(paste0("Selected normalisation approach: ", x_type))
     if (x_type == "VST") {
