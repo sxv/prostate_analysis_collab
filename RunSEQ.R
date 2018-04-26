@@ -970,7 +970,7 @@ RunSEQ <- function(x=NULL, dds = NULL, initial_filter="rowSum", Col_Data=NULL, o
         set.seed(123)
         print("Perform Nbclust to determine the best partition of genes...(gap/silhouette) (performing all 30 tests takes minutes till hours)")
         nb <- NbClust(gene_for_heatmap, distance = "euclidean", min.nc = 2,
-                      max.nc = 20, method = "kmeans", index ="gap")
+                      max.nc = 20, method = "kmeans", index ="silhouette")
         #print(fviz_nbclust(nb) + theme_minimal())
         print(nb)
         ggsave(paste(prefix,x_type,x_itm$name,"_clustering.png",sep="_"))
@@ -1052,12 +1052,12 @@ RunSEQ <- function(x=NULL, dds = NULL, initial_filter="rowSum", Col_Data=NULL, o
         par_dis<-as.dist(1-cor(gene_for_heatmap_c));
 
         #Save the annotation
-        col_anno2 = col_anno
-        col_anno2$sample_id = rownames(col_anno)
+        col_anno2 = df_class
+        col_anno2$sample_id = rownames(df_class)
         df_row2 = df_row
         df_row2$gene_id = rownames(df_row)
-        write.table(col_anno2,paste0(prefix, "_", x_type, "_", x_itm$name, "_genes_sample_cluster_annotation.csv"), row.names=F, col.names=T)
-        write.table(df_row2,paste0(prefix, "_", x_type, "_", x_itm$name, "_genes_gene_cluster_annotation.csv"), row.names=F, col.names=T)
+        write.table(col_anno2,paste0(prefix, "_", x_type, "_", x_itm$name, "_genes_sample_cluster_annotation.csv"), quote=F, sep=",", row.names=F, col.names=T)
+        write.table(df_row2,paste0(prefix, "_", x_type, "_", x_itm$name, "_genes_gene_cluster_annotation.csv"), quote=F, sep=",", row.names=F, col.names=T)
 
         ptl_heatmap = pheatmap(gene_for_heatmap_c,
                                clustering_distance_cols = par_dis,
@@ -1093,6 +1093,7 @@ RunSEQ <- function(x=NULL, dds = NULL, initial_filter="rowSum", Col_Data=NULL, o
         #COCA
         #1. Samplewise
         print("----Samplewise----")
+        print("Proc 1: ConsensusClusterPlus")
         title=tempdir()
         results_COCA_R = ConsensusClusterPlus(mat,maxK=20,reps=1000,pItem=0.8,pFeature=1, title=title,clusterAlg="hc",distance="pearson",seed=1262118388.71279,plot="png")
         icl = calcICL(results_COCA_R,title=title,plot="png")
@@ -1104,6 +1105,7 @@ RunSEQ <- function(x=NULL, dds = NULL, initial_filter="rowSum", Col_Data=NULL, o
 
         #2. Genewise
         print("----Genewise----")
+        print("Proc 1: ConsensusClusterPlus")
         title=tempdir()
         results_COCA_R = ConsensusClusterPlus(t(mat),maxK=20,reps=1000,pItem=0.8,pFeature=1, title=title,clusterAlg="hc",distance="pearson",seed=1262118388.71279,plot="png")
         icl = calcICL(results_COCA_R,title=title,plot="png")
@@ -1121,9 +1123,10 @@ RunSEQ <- function(x=NULL, dds = NULL, initial_filter="rowSum", Col_Data=NULL, o
         #3. Gene 2. approach nbclust
         set.seed(123)
         library(NbClust)
+        print("Proc 2: Nbclust")
         print("Perform Nbclust to determine the best partition of genes (gap/silhouette)... (Takes minutes till hours)")
         nb <- NbClust(mat, distance = "euclidean", min.nc = 2,
-                      max.nc = 20, method = "kmeans", index ="gap")
+                      max.nc = 20, method = "kmeans", index ="silhouette")
         print(nb)
         #print(fviz_nbclust(nb) + theme_minimal())
         ggsave(paste(prefix,x_type,x_itm$name, "_top_gene_clustering.png",sep="_"))
@@ -1139,6 +1142,7 @@ RunSEQ <- function(x=NULL, dds = NULL, initial_filter="rowSum", Col_Data=NULL, o
         #3. Gene 3. approach tight cluster
         #if (x_itm$name=="selected") {
         library(tightClust)
+        print("Proc 3: Nbclust")
         print("Running: Tight cluster for gene clustering...")
         h_tightclust <- getTightCluster(x=mat)
         col_anno = data.frame(SampleType = anno$SampleType)
@@ -1163,6 +1167,7 @@ RunSEQ <- function(x=NULL, dds = NULL, initial_filter="rowSum", Col_Data=NULL, o
 
         #if (x_itm$name=="selected") {
         #4. Gene 4. model-based clustering (Gaussian finite mixture model fitted by EM algorithm)
+        print("Proc 4: Nbclust")
         print("Running: Model-based clustering using mclust...")
         library(mclust)
         gene_g_top = t(mat)
@@ -1196,10 +1201,11 @@ RunSEQ <- function(x=NULL, dds = NULL, initial_filter="rowSum", Col_Data=NULL, o
         col_anno2$sample_id = rownames(anno)
         df_row2 = df_row
         df_row2$gene_id = rownames(df_row)
-        write.table(anno,paste0(prefix, "_", x_type, "_", x_itm$name, "_top_genes_sample_cluster_annotation.csv"), sep=",", row.names=F, col.names=T)
-        write.table(df_row,paste0(prefix, "_", x_type, "_", x_itm$name, "_top_genes_gene_cluster_annotation.csv"), sep=",", row.names=F, col.names=T)
+        print("Proc: Save the cluster results...")
+        write.table(col_anno2,paste0(prefix, "_", x_type, "_", x_itm$name, "_top_genes_sample_cluster_annotation.csv"), quote=F, sep=",", row.names=F, col.names=T)
+        write.table(df_row2,paste0(prefix, "_", x_type, "_", x_itm$name, "_top_genes_gene_cluster_annotation.csv"), quote=F, sep=",", row.names=F, col.names=T)
         #6. Generate the heatmap
-        print("Generating heatmap for top variable genes....")
+        print("Proc: Generating heatmap for top variable genes....")
         ptl_heatmap = pheatmap(mat, annotation_col = anno, annotation_colors= ann_colors,
                                annotation_row=df_row, clustering_distance_rows="euclidean",
                                clustering_distance_cols="correlation",
